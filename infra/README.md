@@ -36,7 +36,8 @@ It creates:
 
 - A state resource group + storage account (ZRS, versioning, soft delete, shared keys disabled) and `tfstate` container.
 - An Entra ID app registration for GitHub Actions with OIDC federated credentials for
-  `repo:<owner>/<repo>:pull_request` (plan) and `repo:<owner>/<repo>:ref:refs/heads/main` (apply). No secrets.
+  `<prefix>:pull_request` (plan) and `<prefix>:ref:refs/heads/main` (apply), where `<prefix>` is read from
+  GitHub (e.g. `repo:Owner@123/repo@456` when immutable subjects are on). No secrets.
 - Role assignments for that principal: `Contributor` and `Role Based Access Control Administrator` on the
   subscription (Terraform creates role assignments), `Storage Blob Data Contributor` on the state account.
 - GitHub repo variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `TFSTATE_RESOURCE_GROUP`,

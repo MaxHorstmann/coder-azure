@@ -88,17 +88,25 @@ APP_OBJECT_ID="$(az ad app show --id "$APP_ID" --query id -o tsv)"
 SP_OBJECT_ID="$(az ad sp show --id "$APP_ID" --query id -o tsv 2>/dev/null || az ad sp create --id "$APP_ID" --query id -o tsv)"
 
 echo "==> Adding federated credentials"
+# GitHub may issue "immutable" subjects that embed owner/repo IDs, e.g.
+# repo:Owner@123/repo@456:pull_request. Ask GitHub for the exact prefix it uses.
+SUB_PREFIX="$(gh api "repos/${GITHUB_REPO}/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty' 2>/dev/null || true)"
+SUB_PREFIX="${SUB_PREFIX:-repo:${GITHUB_REPO}}"
+echo "    OIDC subject prefix: $SUB_PREFIX"
+
 add_fic() {
-  local name="$1" subject="$2"
-  if ! az ad app federated-credential show --id "$APP_OBJECT_ID" --federated-credential-id "$name" &>/dev/null; then
-    az ad app federated-credential create --id "$APP_OBJECT_ID" --parameters "$(jq -n \
-      --arg name "$name" --arg subject "$subject" \
-      '{name: $name, issuer: "https://token.actions.githubusercontent.com", subject: $subject, audiences: ["api://AzureADTokenExchange"]}')" \
-      --output none
+  local name="$1" subject="$2" params
+  params="$(jq -n --arg name "$name" --arg subject "$subject" \
+    '{name: $name, issuer: "https://token.actions.githubusercontent.com", subject: $subject, audiences: ["api://AzureADTokenExchange"]}')"
+  if az ad app federated-credential show --id "$APP_OBJECT_ID" --federated-credential-id "$name" &>/dev/null; then
+    az ad app federated-credential update --id "$APP_OBJECT_ID" --federated-credential-id "$name" \
+      --parameters "$params" --output none
+  else
+    az ad app federated-credential create --id "$APP_OBJECT_ID" --parameters "$params" --output none
   fi
 }
-add_fic "github-pull-request" "repo:${GITHUB_REPO}:pull_request"
-add_fic "github-main" "repo:${GITHUB_REPO}:ref:refs/heads/main"
+add_fic "github-pull-request" "${SUB_PREFIX}:pull_request"
+add_fic "github-main" "${SUB_PREFIX}:ref:refs/heads/main"
 
 echo "==> Assigning roles"
 assign() {
