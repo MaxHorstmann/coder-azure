@@ -57,28 +57,22 @@ variable "kubernetes_version" {
   default     = null
 }
 
-variable "aks_system_node_vm_size" {
-  description = "VM size for the system node pool."
+variable "aks_node_vm_size" {
+  description = "VM size for the AKS node pool (runs system pods, coderd and workspaces)."
   type        = string
   default     = "Standard_D2s_v5"
 }
 
-variable "aks_user_node_vm_size" {
-  description = "VM size for the user node pool (runs coderd and workspaces)."
-  type        = string
-  default     = "Standard_D4s_v5"
-}
-
-variable "aks_user_node_min_count" {
-  description = "Minimum node count for the user node pool autoscaler."
+variable "aks_node_min_count" {
+  description = "Minimum node count for the node pool autoscaler."
   type        = number
   default     = 1
 }
 
-variable "aks_user_node_max_count" {
-  description = "Maximum node count for the user node pool autoscaler."
+variable "aks_node_max_count" {
+  description = "Maximum node count for the node pool autoscaler."
   type        = number
-  default     = 5
+  default     = 3
 }
 
 variable "aks_admin_group_object_ids" {
@@ -98,7 +92,7 @@ variable "postgres_version" {
 variable "postgres_sku_name" {
   description = "PostgreSQL Flexible Server SKU. Burstable is fine for small installs; use GP_Standard_D2ds_v5+ for production."
   type        = string
-  default     = "B_Standard_B2s"
+  default     = "B_Standard_B1ms"
 }
 
 variable "postgres_storage_mb" {

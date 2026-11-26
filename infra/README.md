@@ -4,9 +4,9 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 
 | File          | What                                                                                   |
 |---------------|----------------------------------------------------------------------------------------|
-| `main.tf`     | Resource group, Log Analytics workspace                                                |
+| `main.tf`     | Resource group                                                                         |
 | `network.tf`  | VNet with an AKS subnet and a subnet delegated to Postgres; private DNS zone for Postgres |
-| `aks.tf`      | AKS cluster (Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity), system + autoscaling user node pool |
+| `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
 | `outputs.tf`  | Cluster name, OIDC issuer, Postgres FQDN, and a sensitive `coder_pg_connection_url`    |
 

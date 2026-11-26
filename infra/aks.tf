@@ -22,7 +22,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   node_resource_group = "rg-${var.name}-aks-nodes"
   dns_prefix          = var.name
   kubernetes_version  = var.kubernetes_version
-  sku_tier            = "Standard"
+  sku_tier            = "Free" # no uptime SLA; switch to "Standard" for production
 
   automatic_upgrade_channel = "patch"
   node_os_upgrade_channel   = "NodeImage"
@@ -44,17 +44,18 @@ resource "azurerm_kubernetes_cluster" "main" {
     identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
 
+  # Single node pool running both system pods and Coder; the autoscaler adds
+  # nodes as workspaces need them.
   default_node_pool {
-    name                         = "system"
-    vm_size                      = var.aks_system_node_vm_size
-    vnet_subnet_id               = azurerm_subnet.aks.id
-    auto_scaling_enabled         = true
-    min_count                    = 1
-    max_count                    = 3
-    os_disk_type                 = "Managed"
-    os_disk_size_gb              = 64
-    only_critical_addons_enabled = true
-    temporary_name_for_rotation  = "systemtmp"
+    name                        = "default"
+    vm_size                     = var.aks_node_vm_size
+    vnet_subnet_id              = azurerm_subnet.aks.id
+    auto_scaling_enabled        = true
+    min_count                   = var.aks_node_min_count
+    max_count                   = var.aks_node_max_count
+    os_disk_type                = "Managed"
+    os_disk_size_gb             = 64
+    temporary_name_for_rotation = "defaulttmp"
 
     upgrade_settings {
       max_surge = "33%"
@@ -72,11 +73,6 @@ resource "azurerm_kubernetes_cluster" "main" {
     dns_service_ip      = "172.16.0.10"
   }
 
-  oms_agent {
-    log_analytics_workspace_id      = azurerm_log_analytics_workspace.main.id
-    msi_auth_for_monitoring_enabled = true
-  }
-
   tags = var.tags
 
   depends_on = [azurerm_role_assignment.aks_network]
@@ -86,29 +82,6 @@ resource "azurerm_kubernetes_cluster" "main" {
       # Managed by the autoscaler.
       default_node_pool[0].node_count,
     ]
-  }
-}
-
-resource "azurerm_kubernetes_cluster_node_pool" "user" {
-  name                  = "user"
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
-  vm_size               = var.aks_user_node_vm_size
-  vnet_subnet_id        = azurerm_subnet.aks.id
-  mode                  = "User"
-  auto_scaling_enabled  = true
-  min_count             = var.aks_user_node_min_count
-  max_count             = var.aks_user_node_max_count
-  os_disk_type          = "Managed"
-  os_disk_size_gb       = 128
-
-  upgrade_settings {
-    max_surge = "33%"
-  }
-
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = [node_count]
   }
 }
 
