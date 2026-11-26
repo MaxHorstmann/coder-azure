@@ -5,7 +5,7 @@
 #   - an Entra ID app registration / service principal for GitHub Actions,
 #     with OIDC federated credentials (no client secrets)
 #   - role assignments for that principal
-#   - the GitHub repo variables and `production` environment the workflow uses
+#   - the GitHub repo variables the workflow uses
 #
 # Safe to re-run. Requires: az (logged in), gh (logged in), jq.
 #
@@ -28,7 +28,6 @@ STATE_STORAGE_ACCOUNT="${STATE_STORAGE_ACCOUNT:-sttfstate$(echo -n "$SUBSCRIPTIO
 STATE_CONTAINER="${STATE_CONTAINER:-tfstate}"
 
 APP_NAME="${APP_NAME:-github-${GITHUB_REPO//\//-}-terraform}"
-ENVIRONMENT="${ENVIRONMENT:-production}"
 
 echo "Subscription:     $SUBSCRIPTION_ID"
 echo "Tenant:           $TENANT_ID"
@@ -99,7 +98,7 @@ add_fic() {
   fi
 }
 add_fic "github-pull-request" "repo:${GITHUB_REPO}:pull_request"
-add_fic "github-env-${ENVIRONMENT}" "repo:${GITHUB_REPO}:environment:${ENVIRONMENT}"
+add_fic "github-main" "repo:${GITHUB_REPO}:ref:refs/heads/main"
 
 echo "==> Assigning roles"
 assign() {
@@ -114,14 +113,13 @@ assign "Role Based Access Control Administrator" "/subscriptions/$SUBSCRIPTION_I
 # Data-plane access to the state blobs (shared keys are disabled).
 assign "Storage Blob Data Contributor" "$STORAGE_ID"
 
-echo "==> Configuring GitHub repo variables and environment"
+echo "==> Configuring GitHub repo variables"
 gh variable set AZURE_CLIENT_ID         --repo "$GITHUB_REPO" --body "$APP_ID"
 gh variable set AZURE_TENANT_ID         --repo "$GITHUB_REPO" --body "$TENANT_ID"
 gh variable set AZURE_SUBSCRIPTION_ID   --repo "$GITHUB_REPO" --body "$SUBSCRIPTION_ID"
 gh variable set TFSTATE_RESOURCE_GROUP  --repo "$GITHUB_REPO" --body "$STATE_RESOURCE_GROUP"
 gh variable set TFSTATE_STORAGE_ACCOUNT --repo "$GITHUB_REPO" --body "$STATE_STORAGE_ACCOUNT"
 gh variable set TFSTATE_CONTAINER       --repo "$GITHUB_REPO" --body "$STATE_CONTAINER"
-gh api --method PUT "repos/${GITHUB_REPO}/environments/${ENVIRONMENT}" --silent
 
 echo
 echo "Done. Local usage:"

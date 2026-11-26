@@ -36,11 +36,11 @@ It creates:
 
 - A state resource group + storage account (ZRS, versioning, soft delete, shared keys disabled) and `tfstate` container.
 - An Entra ID app registration for GitHub Actions with OIDC federated credentials for
-  `repo:<owner>/<repo>:pull_request` (plan) and `repo:<owner>/<repo>:environment:production` (apply). No secrets.
+  `repo:<owner>/<repo>:pull_request` (plan) and `repo:<owner>/<repo>:ref:refs/heads/main` (apply). No secrets.
 - Role assignments for that principal: `Contributor` and `Role Based Access Control Administrator` on the
   subscription (Terraform creates role assignments), `Storage Blob Data Contributor` on the state account.
 - GitHub repo variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `TFSTATE_RESOURCE_GROUP`,
-  `TFSTATE_STORAGE_ACCOUNT`, `TFSTATE_CONTAINER`, and a `production` environment.
+  `TFSTATE_STORAGE_ACCOUNT`, `TFSTATE_CONTAINER`.
 
 > The `Role Based Access Control Administrator` assignment is broad. Consider tightening it with an
 > [ABAC condition](https://learn.microsoft.com/azure/role-based-access-control/delegate-role-assignments-overview)
@@ -52,8 +52,7 @@ It creates:
 
 - **Pull requests** touching `infra/**`: `fmt -check`, `init`, `validate`, `plan`, and the plan is posted via [`borchero/terraform-plan-comment`](https://github.com/borchero/terraform-plan-comment)
   (and updated) as a PR comment.
-- **Push to `main`**: the same steps, then `apply` of the saved plan, in the `production` environment. Add required reviewers to that
-  environment in repo settings if you want a manual approval gate before apply.
+- **Push to `main`**: the same steps, then `apply` of the saved plan.
 
 All runs share one concurrency group so they never contend for the state lock.
 

@@ -44,11 +44,6 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
-    # Pushes to main run in the `production` environment, so the OIDC subject is
-    # repo:<owner>/<repo>:environment:production; add required reviewers on it for
-    # a manual gate before apply. PRs run without an environment (subject
-    # repo:<owner>/<repo>:pull_request).
-    environment: ${{ (github.event_name != 'pull_request' && github.ref == 'refs/heads/main') && 'production' || '' }}
     steps:
       - uses: actions/checkout@v4
 
