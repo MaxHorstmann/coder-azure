@@ -17,7 +17,7 @@ variable "name" {
 variable "location" {
   description = "Azure region for all resources."
   type        = string
-  default     = "eastus2"
+  default     = "centralus" # Postgres Flexible Server is restricted for this subscription in eastus2
 }
 
 variable "tags" {
