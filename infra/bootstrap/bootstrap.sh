@@ -19,6 +19,7 @@ set -euo pipefail
 
 SUBSCRIPTION_ID="${SUBSCRIPTION_ID:-$(az account show --query id -o tsv)}"
 TENANT_ID="$(az account show --subscription "$SUBSCRIPTION_ID" --query tenantId -o tsv)"
+# Region of the Terraform state storage only; independent of where infra/ deploys.
 LOCATION="${LOCATION:-eastus2}"
 GITHUB_REPO="${GITHUB_REPO:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 

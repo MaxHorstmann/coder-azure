@@ -77,7 +77,7 @@ Local accounts are disabled; access is via Entra ID. Pass group object IDs in `a
 to grant cluster-admin, then:
 
 ```sh
-az aks get-credentials -g rg-coder -n aks-coder
+az aks get-credentials -g rg-coder-centralus -n aks-coder
 kubelogin convert-kubeconfig -l azurecli
 kubectl get nodes
 ```

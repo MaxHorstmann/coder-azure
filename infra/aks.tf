@@ -19,7 +19,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   name                = "aks-${var.name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  node_resource_group = "rg-${var.name}-aks-nodes"
+  node_resource_group = "rg-${var.name}-${var.location}-aks-nodes"
   dns_prefix          = var.name
   kubernetes_version  = var.kubernetes_version
   sku_tier            = "Free" # no uptime SLA; switch to "Standard" for production
