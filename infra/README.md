@@ -50,7 +50,7 @@ It creates:
 
 `.github/workflows/terraform.yml`:
 
-- **Pull requests** touching `infra/**`: `fmt -check`, `init`, `validate`, `plan`, and the plan is posted
+- **Pull requests** touching `infra/**`: `fmt -check`, `init`, `validate`, `plan`, and the plan is posted via [`borchero/terraform-plan-comment`](https://github.com/borchero/terraform-plan-comment)
   (and updated) as a PR comment.
 - **Push to `main`**: `plan` + `apply` in the `production` environment. Add required reviewers to that
   environment in repo settings if you want a manual approval gate before apply.

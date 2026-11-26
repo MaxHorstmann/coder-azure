@@ -68,56 +68,14 @@ jobs:
         run: terraform validate -no-color
 
       - name: terraform plan
-        id: plan
-        run: |
-          set -o pipefail
-          terraform plan -no-color -lock-timeout=5m -out=tfplan | tee plan.log
-          terraform show -no-color tfplan > plan.txt
+        run: terraform plan -no-color -lock-timeout=5m -out=tfplan
 
       - name: Comment plan on PR
-        if: always() && steps.plan.outcome != 'skipped'
-        uses: actions/github-script@v7
-        env:
-          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        uses: borchero/terraform-plan-comment@v3
         with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- terraform-plan -->';
-            const file = fs.existsSync('infra/plan.txt') ? 'infra/plan.txt' : 'infra/plan.log';
-            let plan = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : 'No plan output.';
-            const max = 60000;
-            if (plan.length > max) {
-              plan = '... (truncated, see workflow logs for full plan)\n' + plan.slice(-max);
-            }
-            const summary = (plan.match(/^Plan: .*$/m) || plan.match(/^No changes\..*$/m) || [''])[0];
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = [
-              marker,
-              `### Terraform plan: \`${process.env.PLAN_OUTCOME}\``,
-              summary ? `**${summary}**` : '',
-              '',
-              '<details><summary>Show plan</summary>',
-              '',
-              '```hcl',
-              plan,
-              '```',
-              '',
-              '</details>',
-              '',
-              `_Commit ${context.sha.substring(0, 7)} · [workflow run](${runUrl})_`,
-            ].join('\n');
-
-            const { data: comments } = await github.rest.issues.listComments({
-              ...context.repo,
-              issue_number: context.issue.number,
-              per_page: 100,
-            });
-            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
-            }
+          token: ${{ github.token }}
+          planfile: tfplan
+          working-directory: infra
 
   apply:
     name: apply
