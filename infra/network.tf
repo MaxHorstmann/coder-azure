@@ -18,6 +18,9 @@ resource "azurerm_subnet" "postgres" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [var.postgres_subnet_prefix]
+  # Azure adds this endpoint when the Flexible Server is created (used for
+  # backups/WAL); declare it so Terraform doesn't try to remove it.
+  service_endpoints = ["Microsoft.Storage"]
 
   delegation {
     name = "postgres-flexible-server"
