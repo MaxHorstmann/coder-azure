@@ -37,14 +37,18 @@ defaults:
     working-directory: infra
 
 jobs:
-  plan:
-    name: plan
-    if: github.event_name == 'pull_request'
+  terraform:
+    name: terraform
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
       pull-requests: write
+    # Pushes to main run in the `production` environment, so the OIDC subject is
+    # repo:<owner>/<repo>:environment:production; add required reviewers on it for
+    # a manual gate before apply. PRs run without an environment (subject
+    # repo:<owner>/<repo>:pull_request).
+    environment: ${{ (github.event_name != 'pull_request' && github.ref == 'refs/heads/main') && 'production' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,7 +58,6 @@ jobs:
           terraform_wrapper: false
 
       - name: terraform fmt
-        id: fmt
         run: terraform fmt -check -recursive -diff
 
       - name: terraform init
@@ -72,37 +75,13 @@ jobs:
         run: terraform plan -no-color -lock-timeout=5m -out=tfplan
 
       - name: Comment plan on PR
+        if: github.event_name == 'pull_request'
         uses: borchero/terraform-plan-comment@v3
         with:
           token: ${{ github.token }}
           planfile: tfplan
           working-directory: infra
 
-  apply:
-    name: apply
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    # Federated credential subject: repo:<owner>/<repo>:environment:production
-    # Add required reviewers on this environment if you want a manual gate.
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-          terraform_wrapper: false
-
-      - name: terraform init
-        run: |
-          terraform init \
-            -backend-config="resource_group_name=${{ vars.TFSTATE_RESOURCE_GROUP }}" \
-            -backend-config="storage_account_name=${{ vars.TFSTATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
-            -backend-config="key=coder.tfstate"
-
-      - name: terraform plan
-        run: terraform plan -no-color -lock-timeout=5m -out=tfplan
-
       - name: terraform apply
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: terraform apply -no-color -lock-timeout=5m -auto-approve tfplan

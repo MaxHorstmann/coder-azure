@@ -48,11 +48,11 @@ It creates:
 
 ## CI/CD
 
-`.github/workflows/terraform.yml`:
+`.github/workflows/terraform.yml` (a single `terraform` job):
 
 - **Pull requests** touching `infra/**`: `fmt -check`, `init`, `validate`, `plan`, and the plan is posted via [`borchero/terraform-plan-comment`](https://github.com/borchero/terraform-plan-comment)
   (and updated) as a PR comment.
-- **Push to `main`**: `plan` + `apply` in the `production` environment. Add required reviewers to that
+- **Push to `main`**: the same steps, then `apply` of the saved plan, in the `production` environment. Add required reviewers to that
   environment in repo settings if you want a manual approval gate before apply.
 
 All runs share one concurrency group so they never contend for the state lock.
