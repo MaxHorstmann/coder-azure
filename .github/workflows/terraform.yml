@@ -52,6 +52,18 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
+      # az login (OIDC) + kubelogin: the kubernetes provider gets its Entra ID
+      # token for the AKS API server via `kubelogin --login azurecli`.
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: v0.2.22
+
       - name: terraform fmt
         run: terraform fmt -check -recursive -diff
 

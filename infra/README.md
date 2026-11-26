@@ -8,6 +8,7 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 | `network.tf`  | VNet with an AKS subnet and a subnet delegated to Postgres; private DNS zone for Postgres |
 | `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
+| `coder.tf`    | `coder` namespace and `coder-db-url` secret (steps 1 and 3 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
 | `outputs.tf`  | Cluster name, OIDC issuer, Postgres FQDN, and a sensitive `coder_pg_connection_url`    |
 
 ```
@@ -69,7 +70,9 @@ terraform init \
 terraform plan -var subscription_id=$(az account show --query id -o tsv)
 ```
 
-Your user needs `Storage Blob Data Contributor` on the state storage account.
+Your user needs `Storage Blob Data Contributor` on the state storage account, plus
+`Azure Kubernetes Service RBAC Cluster Admin` on the cluster and [`kubelogin`](https://azure.github.io/kubelogin/)
+installed (`brew install Azure/kubelogin/kubelogin`), since Terraform also manages Kubernetes resources.
 
 ## Accessing the cluster
 
@@ -84,10 +87,18 @@ kubectl get nodes
 
 ## Next: Coder
 
-The database connection string for Coder's `CODER_PG_CONNECTION_URL` is available as:
+Terraform creates the `coder` namespace and the `coder-db-url` secret (key `url`) holding the managed
+Postgres connection string, so the Helm values can reference it as in the Coder docs:
 
-```sh
-terraform output -raw coder_pg_connection_url
+```yaml
+coder:
+  env:
+    - name: CODER_PG_CONNECTION_URL
+      valueFrom:
+        secretKeyRef:
+          name: coder-db-url
+          key: url
 ```
 
-Postgres is only reachable from inside the VNet, so this works from AKS pods but not from your laptop.
+The same URL is available as `terraform output -raw coder_pg_connection_url`. Postgres is only reachable
+from inside the VNet, so it works from AKS pods but not from your laptop.
