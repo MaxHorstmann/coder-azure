@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: coder
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ .Values.secretName | quote }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  dnsNames:
+    - {{ .Values.domain | quote }}
+    - {{ printf "*.%s" .Values.domain | quote }}

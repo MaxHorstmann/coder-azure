@@ -1,0 +1,5 @@
+apiVersion: v2
+name: coder-tls
+description: Let's Encrypt ClusterIssuer (Azure DNS, DNS-01) and wildcard Certificate for Coder.
+type: application
+version: 0.1.0

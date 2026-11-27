@@ -1,0 +1,7 @@
+# All values are set from infra/tls.tf.
+acmeServer: https://acme-v02.api.letsencrypt.org/directory
+domain: ""
+secretName: coder-tls
+subscriptionID: ""
+resourceGroupName: ""
+clientID: ""
