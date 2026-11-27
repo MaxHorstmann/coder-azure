@@ -13,12 +13,11 @@ resource "azurerm_user_assigned_identity" "cert_manager" {
 }
 
 resource "azurerm_federated_identity_credential" "cert_manager" {
-  name                = "aks-cert-manager"
-  resource_group_name = azurerm_resource_group.main.name
-  parent_id           = azurerm_user_assigned_identity.cert_manager.id
-  issuer              = azurerm_kubernetes_cluster.main.oidc_issuer_url
-  subject             = "system:serviceaccount:cert-manager:cert-manager"
-  audience            = ["api://AzureADTokenExchange"]
+  name      = "aks-cert-manager"
+  parent_id = azurerm_user_assigned_identity.cert_manager.id
+  issuer    = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject   = "system:serviceaccount:cert-manager:cert-manager"
+  audience  = ["api://AzureADTokenExchange"]
 }
 
 # Lets cert-manager create/delete the _acme-challenge TXT records.
