@@ -112,3 +112,11 @@ variable "postgres_admin_username" {
   type        = string
   default     = "coderadmin"
 }
+
+# --- Coder --------------------------------------------------------------------
+
+variable "coder_domain" {
+  description = "Domain Coder is served on. Delegated to an Azure DNS zone; workspace apps use *.<domain>."
+  type        = string
+  default     = "coder.maxhorstmann.net"
+}
