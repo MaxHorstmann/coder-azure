@@ -44,3 +44,7 @@ output "coder_dns_name_servers" {
 output "coder_public_ip" {
   value = azurerm_public_ip.coder.ip_address
 }
+
+output "coder_access_url" {
+  value = local.coder_access_url
+}

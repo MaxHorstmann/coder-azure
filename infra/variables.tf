@@ -120,3 +120,27 @@ variable "coder_domain" {
   type        = string
   default     = "coder.maxhorstmann.net"
 }
+
+variable "coder_chart_version" {
+  description = "Coder Helm chart version (https://helm.coder.com/v2)."
+  type        = string
+  default     = "2.38.11"
+}
+
+variable "cert_manager_chart_version" {
+  description = "cert-manager Helm chart version (https://charts.jetstack.io)."
+  type        = string
+  default     = "v1.21.3"
+}
+
+variable "traefik_chart_version" {
+  description = "Traefik Helm chart version (https://traefik.github.io/charts)."
+  type        = string
+  default     = "43.0.0"
+}
+
+variable "letsencrypt_server" {
+  description = "ACME directory URL. Use https://acme-staging-v02.api.letsencrypt.org/directory for testing."
+  type        = string
+  default     = "https://acme-v02.api.letsencrypt.org/directory"
+}

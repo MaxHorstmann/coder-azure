@@ -8,7 +8,8 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 | `network.tf`  | VNet with an AKS subnet and a subnet delegated to Postgres; private DNS zone for Postgres |
 | `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
-| `coder.tf`    | `coder` namespace and `coder-db-url` secret (steps 1 and 3 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
+| `coder.tf`    | `coder` namespace, `coder-db-url` secret and the Coder Helm release (steps 1, 3 and 4 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
+| `tls.tf`      | cert-manager (workload identity → Azure DNS), Let's Encrypt wildcard cert via `charts/coder-tls`, Traefik ingress on the static IP |
 | `dns.tf`      | Azure DNS zone for `coder_domain` (delegated from the registrar), static public IP for Coder, `@` and `*` A records |
 | `outputs.tf`  | Cluster name, OIDC issuer, Postgres FQDN, and a sensitive `coder_pg_connection_url`    |
 
@@ -98,20 +99,26 @@ terraform output coder_dns_name_servers
 In Namecheap → Domain List → maxhorstmann.net → Advanced DNS, add an `NS Record` with host `coder` for each
 value. Check delegation with `dig NS coder.maxhorstmann.net +short`.
 
-## Next: Coder
+## Coder
 
-Terraform creates the `coder` namespace and the `coder-db-url` secret (key `url`) holding the managed
-Postgres connection string, so the Helm values can reference it as in the Coder docs:
+Coder runs at **https://coder.maxhorstmann.net** (`terraform output coder_access_url`), installed by Terraform
+following the [Coder Kubernetes install guide](https://coder.com/docs/install/server/kubernetes/):
 
-```yaml
-coder:
-  env:
-    - name: CODER_PG_CONNECTION_URL
-      valueFrom:
-        secretKeyRef:
-          name: coder-db-url
-          key: url
+```
+Internet ─▶ static IP (pip-coder) ─▶ Traefik (TLS, HTTP→HTTPS) ─▶ coder (ClusterIP) ─▶ Postgres (private)
+                                          ▲
+                cert-manager ── DNS-01 ──▶ Azure DNS zone coder.maxhorstmann.net
 ```
 
-The same URL is available as `terraform output -raw coder_pg_connection_url`. Postgres is only reachable
-from inside the VNet, so it works from AKS pods but not from your laptop.
+- **Database**: `CODER_PG_CONNECTION_URL` comes from the `coder-db-url` secret (key `url`), pointing at the managed
+  Postgres server (`sslmode=require`).
+- **TLS**: cert-manager gets a Let's Encrypt cert for `coder.maxhorstmann.net` and `*.coder.maxhorstmann.net`
+  (secret `coder/coder-tls`) using DNS-01. It authenticates to Azure DNS with workload identity
+  (`id-cert-manager-coder`, *DNS Zone Contributor* on the zone), so there are no secrets. Traefik terminates TLS and
+  reloads renewed certs automatically. coderd itself only reads certificates at startup, which is why it doesn't
+  terminate TLS.
+- **Workspace apps**: `CODER_WILDCARD_ACCESS_URL=*.coder.maxhorstmann.net`.
+- **Versions**: `coder_chart_version`, `cert_manager_chart_version`, `traefik_chart_version`.
+
+Open the URL and create the first (admin) user to finish setup. Check certificate status with
+`kubectl -n coder get certificate coder`.
