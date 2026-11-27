@@ -35,3 +35,12 @@ output "coder_pg_connection_url" {
     azurerm_postgresql_flexible_server_database.coder.name,
   )
 }
+
+output "coder_dns_name_servers" {
+  description = "Add these as NS records for the coder_domain host at the parent domain's registrar."
+  value       = azurerm_dns_zone.coder.name_servers
+}
+
+output "coder_public_ip" {
+  value = azurerm_public_ip.coder.ip_address
+}

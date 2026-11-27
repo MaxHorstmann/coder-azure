@@ -9,6 +9,7 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 | `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
 | `coder.tf`    | `coder` namespace and `coder-db-url` secret (steps 1 and 3 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
+| `dns.tf`      | Azure DNS zone for `coder_domain` (delegated from the registrar), static public IP for Coder, `@` and `*` A records |
 | `outputs.tf`  | Cluster name, OIDC issuer, Postgres FQDN, and a sensitive `coder_pg_connection_url`    |
 
 ```
@@ -84,6 +85,18 @@ az aks get-credentials -g rg-coder-centralus -n aks-coder
 kubelogin convert-kubeconfig -l azurecli
 kubectl get nodes
 ```
+
+## DNS for Coder
+
+`coder.maxhorstmann.net` is delegated from Namecheap (where `maxhorstmann.net` lives) to the Azure DNS zone in
+`dns.tf`. After the zone is created, add one `NS` record per name server at the registrar:
+
+```sh
+terraform output coder_dns_name_servers
+```
+
+In Namecheap → Domain List → maxhorstmann.net → Advanced DNS, add an `NS Record` with host `coder` for each
+value. Check delegation with `dig NS coder.maxhorstmann.net +short`.
 
 ## Next: Coder
 
