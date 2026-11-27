@@ -35,3 +35,8 @@ output "coder_pg_connection_url" {
     azurerm_postgresql_flexible_server_database.coder.name,
   )
 }
+
+output "coder_access_url" {
+  description = "URL of the Coder deployment."
+  value       = local.coder_access_url
+}

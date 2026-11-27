@@ -112,3 +112,17 @@ variable "postgres_admin_username" {
   type        = string
   default     = "coderadmin"
 }
+
+# --- Coder --------------------------------------------------------------------
+
+variable "coder_chart_version" {
+  description = "Version of the Coder Helm chart (https://helm.coder.com/v2)."
+  type        = string
+  default     = "2.38.11"
+}
+
+variable "coder_dns_label" {
+  description = "Azure DNS label for Coder's load balancer IP: <label>.<location>.cloudapp.azure.com."
+  type        = string
+  default     = "coder-max"
+}

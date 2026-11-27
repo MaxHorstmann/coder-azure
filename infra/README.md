@@ -8,7 +8,7 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 | `network.tf`  | VNet with an AKS subnet and a subnet delegated to Postgres; private DNS zone for Postgres |
 | `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
-| `coder.tf`    | `coder` namespace and `coder-db-url` secret (steps 1 and 3 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
+| `coder.tf`    | `coder` namespace, `coder-db-url` secret and the Coder Helm release (steps 1, 3 and 4 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
 | `outputs.tf`  | Cluster name, OIDC issuer, Postgres FQDN, and a sensitive `coder_pg_connection_url`    |
 
 ```
@@ -85,20 +85,17 @@ kubelogin convert-kubeconfig -l azurecli
 kubectl get nodes
 ```
 
-## Next: Coder
+## Coder
 
-Terraform creates the `coder` namespace and the `coder-db-url` secret (key `url`) holding the managed
-Postgres connection string, so the Helm values can reference it as in the Coder docs:
+Coder is installed by Terraform (`helm_release.coder` in `coder.tf`), following the
+[Coder Kubernetes install guide](https://coder.com/docs/install/server/kubernetes/):
 
-```yaml
-coder:
-  env:
-    - name: CODER_PG_CONNECTION_URL
-      valueFrom:
-        secretKeyRef:
-          name: coder-db-url
-          key: url
-```
+- **Database**: `CODER_PG_CONNECTION_URL` comes from the `coder-db-url` secret (key `url`), which points at the
+  managed Postgres server (`sslmode=require`). Postgres is only reachable from inside the VNet.
+- **Access URL**: the chart's `LoadBalancer` service gets an AKS-managed public IP with the Azure DNS label
+  `coder_dns_label`, i.e. http://coder-max.centralus.cloudapp.azure.com (`terraform output coder_access_url`).
+- **Chart version**: pinned via `coder_chart_version`; bump it to upgrade Coder.
 
-The same URL is available as `terraform output -raw coder_pg_connection_url`. Postgres is only reachable
-from inside the VNet, so it works from AKS pods but not from your laptop.
+Open the access URL and create the first (admin) user to finish setup.
+
+> Coder is served over plain **HTTP** for now. Add TLS before relying on it.
