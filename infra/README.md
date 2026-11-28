@@ -6,7 +6,7 @@ Terraform for the Azure infrastructure that will host [Coder](https://coder.com/
 |---------------|----------------------------------------------------------------------------------------|
 | `main.tf`     | Resource group                                                                         |
 | `network.tf`  | VNet with an AKS subnet and a subnet delegated to Postgres; private DNS zone for Postgres |
-| `aks.tf`      | Minimal AKS cluster (Free tier, one autoscaling 1-3 node pool of `Standard_D2s_v5`; Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
+| `aks.tf`      | Minimal AKS cluster (Free tier, a single-node pool of `Standard_D2s_v5` (autoscaler capped at 1); Azure CNI overlay + Cilium, Entra ID + Azure RBAC, workload identity) |
 | `postgres.tf` | PostgreSQL Flexible Server (private VNet access only) and a `coder` database           |
 | `coder.tf`    | `coder` namespace, `coder-db-url` secret and the Coder Helm release (steps 1, 3 and 4 of the [Coder Kubernetes install](https://coder.com/docs/install/server/kubernetes/)) |
 | `tls.tf`      | cert-manager (workload identity → Azure DNS), Let's Encrypt wildcard cert via `charts/coder-tls`, Traefik ingress on the static IP |
