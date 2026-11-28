@@ -70,9 +70,9 @@ variable "aks_node_min_count" {
 }
 
 variable "aks_node_max_count" {
-  description = "Maximum node count for the node pool autoscaler."
+  description = "Maximum node count for the node pool autoscaler. 1 = never scale beyond a single node (cost cap)."
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "aks_admin_group_object_ids" {
